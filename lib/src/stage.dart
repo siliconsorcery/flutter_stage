@@ -1,15 +1,15 @@
-import 'package:vector_math/vector_math_64.dart' hide Colors;
 import 'package:flutter/material.dart';
+import 'package:vector_math/vector_math_64.dart' hide Colors;
 
 typedef void SceneCreatedCallback(Scene scene);
 
 class Stage extends StatefulWidget {
   Stage({
-    Key key,
+    super.key,
     this.interactive = true,
-    this.onSceneCreated,
+    required this.onSceneCreated,
     this.children = const <Actor>[],
-  }) : super(key: key);
+  });
 
   final bool interactive;
   final SceneCreatedCallback onSceneCreated;
@@ -20,8 +20,8 @@ class Stage extends StatefulWidget {
 }
 
 class _StageState extends State<Stage> {
-  Scene scene;
-  Offset _lastFocalPoint;
+  late Scene scene;
+  late Offset _lastFocalPoint;
 
   void _handleScaleStart(ScaleStartDetails details) {
     _lastFocalPoint = details.localFocalPoint;
@@ -73,7 +73,7 @@ class _StageState extends State<Stage> {
   void initState() {
     super.initState();
     scene = Scene(onUpdate: () => setState(() {}), children: widget.children);
-    if (widget.onSceneCreated != null) widget.onSceneCreated(scene);
+    widget.onSceneCreated(scene);
   }
 
   @override
@@ -82,7 +82,7 @@ class _StageState extends State<Stage> {
       builder: (BuildContext context, BoxConstraints constraints) {
         scene.camera.viewportWidth = constraints.maxWidth;
         scene.camera.viewportHeight = constraints.maxHeight;
-        final List<Actor> children = List<Actor>();
+        final List<Actor> children = [];
         final Matrix4 transform = scene.camera.projectionMatrix * scene.camera.transform;
         transformActor(children, scene.world, transform);
 
@@ -94,7 +94,7 @@ class _StageState extends State<Stage> {
           return 0;
         });
 
-        List<Widget> widgets = List<Widget>();
+        List<Widget> widgets = [];
         for (int i = 0; i < children.length; i++) {
           final Actor child = children[i];
           final newChild = Positioned(
@@ -125,50 +125,61 @@ class _StageState extends State<Stage> {
 }
 
 class Scene {
-  Scene({VoidCallback onUpdate, List<Actor> children}) {
+  late Camera camera;
+  late Actor world;
+  late VoidCallback _onUpdate;
+
+  Scene({
+    required VoidCallback onUpdate,
+    required List<Actor> children,
+  }) {
     this._onUpdate = onUpdate;
     camera = Camera();
     world = Actor(children: children);
   }
-
-  Camera camera;
-  Actor world;
-  VoidCallback _onUpdate;
 
   void _updateChildren(List<Actor> children) {
     world = Actor(children: children);
   }
 
   void update() {
-    if (_onUpdate != null) _onUpdate();
+    _onUpdate();
   }
 }
 
 class Actor {
   Actor({
-    this.name,
-    Vector3 position,
-    Vector3 rotation,
-    Vector3 scale,
+    String? name,
+    Vector3? position,
+    Vector3? rotation,
+    Vector3? scale,
     this.orgin = const Offset(0.5, 0.5),
     this.width = 100,
     this.height = 100,
     this.widget,
     this.parent,
-    List<Actor> children,
+    List<Actor> children = const [],
   }) {
-    if (position != null) position.copyInto(this.position);
-    if (rotation != null) rotation.copyInto(this.rotation);
-    if (scale != null) scale.copyInto(this.scale);
+    this.name = name ?? 'Hello';
+    if (position != null) {
+      position.copyInto(this.position);
+    }
+    if (rotation != null) {
+      rotation.copyInto(this.rotation);
+    }
+    if (scale != null) {
+      scale.copyInto(this.scale);
+    }
     updateTransform();
-    if (children != null) this.children.addAll(children);
+    this.children.addAll(children);
+
     for (Actor child in this.children) {
       child.parent = this;
     }
   }
 
   /// The name of this actor.
-  String name;
+  late String name;
 
   /// The local position of this actor relative to the parent. Default is Vector3(0.0, 0.0, 0.0). updateTransform after you change the value.
   final Vector3 position = Vector3(0.0, 0.0, 0.0);
@@ -189,10 +200,10 @@ class Actor {
   double height;
 
   /// The parent of this actor.
-  Actor parent;
+  Actor? parent;
 
-  Widget widget;
-  final List<Actor> children = List<Actor>();
+  Widget? widget;
+  final List<Actor> children = [];
 
   /// The transformation of the actor in the scene, including position, rotation, and scaling.
   final Matrix4 transform = Matrix4.identity();
@@ -201,16 +212,17 @@ class Actor {
   final Matrix4 transformedMatrix = Matrix4.identity();
 
   void updateTransform() {
-    final Matrix4 m = Matrix4.compose(position, Quaternion.euler(radians(rotation.y), radians(rotation.x), radians(rotation.z)), scale);
+    final Matrix4 m = Matrix4.compose(
+        position, Quaternion.euler(radians(rotation.y), radians(rotation.x), radians(rotation.z)), scale);
     transform.setFrom(m);
   }
 
   /// Find a child matching the name
-  Actor find(String name) {
+  Actor? find(String name) {
     for (Actor child in children) {
       if (name == child.name) return child;
-      final Actor result = child.find(name);
-      if (result != null) return result;
+      final Actor? result = child.find(name);
+      return result;
     }
     return null;
   }
@@ -218,9 +230,9 @@ class Actor {
 
 class Camera {
   Camera({
-    Vector3 position,
-    Vector3 target,
-    Vector3 up,
+    Vector3? position,
+    Vector3? target,
+    Vector3? up,
     this.fov = 60.0,
     this.near = 0.1,
     this.far = 1000,
@@ -228,13 +240,19 @@ class Camera {
     this.viewportWidth = 100.0,
     this.viewportHeight = 100.0,
   }) {
-    if (position != null) position.copyInto(this.position);
-    if (target != null) target.copyInto(this.target);
-    if (up != null) up.copyInto(this.up);
+    if (position != null) {
+      position.copyInto(this.position);
+    }
+    if (target != null) {
+      target.copyInto(this.target);
+    }
+    if (up != null) {
+      up.copyInto(this.up);
+    }
     updateTransform();
   }
 
-  final Vector3 position = Vector3(0.0, 0.0, -10.0);
+  late Vector3 position = Vector3(0.0, 0.0, -10.0);
   final Vector3 target = Vector3(0.0, 0.0, 0.0);
   final Vector3 up = Vector3(0.0, 1.0, 0.0);
   double fov;

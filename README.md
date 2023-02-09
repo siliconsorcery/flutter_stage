@@ -4,6 +4,13 @@
 
 A widget that positions its children in a 3D scene.
 
+## Update
+
+Silicon Sorcery, Feb 9, 2023:
+
+* Changed code to make it null-safe for use in Flutter v3.x
+* Added some bitmaps to cube faces.
+
 ## Getting Started
 
 Add flutter_stage as a dependency in your pubspec.yaml file.
@@ -51,7 +58,7 @@ class _MyHomePageState extends State<MyHomePage> {
 ```
 
 ## Screenshot
+
 ![screenshot](https://github.com/zesage/flutter_stage/raw/master/resource/screenshot.gif)
 
 [Flutter Clock Challenge submission](https://github.com/zesage/flutter_clock/tree/master/block_clock)
-
